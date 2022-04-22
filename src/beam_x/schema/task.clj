@@ -1,5 +1,5 @@
 (ns beam-x.schema.task
-  (:require [clojure.core.async :as a :refer [chan >! <!  <!! >!! go go-loop close!]]
+  (:require [clojure.core.async :as a :refer [chan >! <! <!! >!! go go-loop close!]]
             [cheshire.core :as ches :refer [parse-string]]
             [clojure.walk :refer [keywordize-keys]]))
 
@@ -27,9 +27,9 @@
 (defn ingest-system [in out]
   (go-loop []
     (when-some [f (<! in)]
-      (do (println "ingesting function f" f)
+      (do
         (>! out (f))
-          (recur)))))
+        (recur)))))
 
 (defn drain-system! [in out at]
   (go-loop []
@@ -38,17 +38,17 @@
       (recur))))
 
 (defn create-parking-system []
-  (let [at   (atom [])
-        in (chan 50)
-        out-i (chan 50)
-        out-d (chan 50)
+  (let [at (atom [])
+        in (chan 20)
+        out-i (chan 20)
+        out-d (chan 20)
         is (ingest-system in out-i)
         ds (drain-system! out-i out-d at)]
     (println "parking system created")
     [in out-i out-d is ds at]))
 
-(defn run-parking-systems [colf]
-  (let [[in out-i out-d is ds at] (create-parking-system)]
+(defn run-parking-systems [system colf]
+  (let [[in out-i out-d is ds at] system]
     (println "mapping functions into in chan")
     (mapv #(>!! in %) colf)
     (println "completed!")
@@ -64,10 +64,10 @@
   (let [out (chan (chan-size colf))
 
         _ (go-loop [cx colf]
-              (if (empty? cx)
-                (a/close! out)
-                (do (>! out ((first cx)))
-                    (recur (rest cx)))))]
+            (if (empty? cx)
+              (a/close! out)
+              (do (>! out ((first cx)))
+                  (recur (rest cx)))))]
 
     (loop [col []]
       (let [v (<!! out)]
@@ -81,7 +81,9 @@
 
   (time (parking-brute many-cat-facts))
 
-  (time (run-parking-systems many-cat-facts))
+  (def parking-system (create-parking-system))
+
+  (time (run-parking-systems parking-system many-cat-facts))
 
 
   (defmacro tap [v]
