@@ -1,5 +1,5 @@
 (ns beam-x.schema.task
-  (:require [clojure.core.async :as a :refer [chan >! <!! <! go go-loop close!]]
+  (:require [clojure.core.async :as a :refer [chan >! <!  <!! >!! go go-loop close!]]
             [cheshire.core :as ches :refer [parse-string]]
             [clojure.walk :refer [keywordize-keys]]))
 
@@ -24,6 +24,36 @@
       c
       max-size)))
 
+(defn ingest-system [in out]
+  (go-loop []
+    (when-some [f (<! in)]
+      (do (println "ingesting function f" f)
+        (>! out (f))
+          (recur)))))
+
+(defn drain-system [in out]
+  (go-loop []
+    (when-some [v (<! in)]
+      (>! out v)
+      (recur))))
+
+(defn create-parking-system []
+  (let [in (chan 100)
+        out-i (chan 5)
+        out-d (chan 5)
+        is (ingest-system in out-i)
+        ds (drain-system out-i out-d)]
+    (println "parking system created")
+    [in out-i out-d is ds]))
+
+(defn run-parking-systems [colf]
+  (let [[in _ out-d _ _] (create-parking-system)]
+    (println "mapping functions into in chan")
+    (mapv #(>!! in %) colf)
+    (println "completed!")
+
+    (<!! out-d)))
+
 (defn parking-brute [colf]
   (let [out (chan (chan-size colf))
 
@@ -41,9 +71,11 @@
 
 (comment
 
-  (def many-cat-facts (mapv (fn [_] get-cat-fact!) (range 10)))
+  (def many-cat-facts (mapv (fn [_] get-cat-fact!) (range 5)))
 
   (time (parking-brute many-cat-facts))
+
+  (run-parking-systems many-cat-facts)
 
 
   (defmacro tap [v]
