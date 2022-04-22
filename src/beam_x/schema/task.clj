@@ -1,6 +1,6 @@
 (ns beam-x.schema.task
   (:require [schema.core :as s]
-            [clojure.core.async :as a :refer [chan >! <! go go-loop]]
+            [clojure.core.async :as a :refer [chan >! <!! <! go go-loop]]
             [cheshire.core :as ches :refer [parse-string]]
             [clojure.walk :refer [keywordize-keys]]))
 
@@ -18,33 +18,36 @@
 (defn get-cat-fact! []
   (-> (slurp "https://catfact.ninja/fact") parse-string keywordize-keys))
 
-(defn get-cat-fact-go [out]
-  (go
-    (println "calling cat fact")
-    (>! out (get-cat-fact!))))
+(defn chan-size [col]
+  (let [max-size 50
+        c (count col)]
+    (if (< c max-size)
+      c
+      max-size)))
 
-(defn get-cat-fact-parked [col]
-  (let [out (chan 10)]
+(defn get-cat-fact-parked [colf]
+  (let [out (chan (chan-size colf))
 
-    (loop [c col]
-      (if (empty? c)
-        c
-        (do (get-cat-fact-go out)
-          (recur (rest c)))))
+        inx (go-loop [cx colf]
+              (if (empty? cx)
+                (do (println "no more to input"))
+                (do (>! out (get-cat-fact!))
+                    (recur (rest cx)))))
 
-    (a/go-loop []
-      (let [x (<! out)]
-        (if (nil? x)
-          col
-          (recur (conj col x)))))))
+        outx (go-loop [col []]
+               (if-some [v (<! out)]
+                 (recur (conj col v))))]
 
-(let [out (get-cat-fact-parked [1 2])]
-  (a/<!! out))
-
-(defn all-parking [colf])
-
+    (do (println outx)
+        outx)))
 
 (comment
+
+  (def many-cat-facts (mapv #(get-cat-fact!) (range 20)))
+
+  (get-cat-fact-parked many-cat-facts)
+
+
   (defmacro tap [v]
     `(do
        (println ~v)
