@@ -1,6 +1,6 @@
 (ns beam-x.schema.task
   (:require [clojure.core.async :as a :refer [chan >! <! <!! >!! go go-loop close!]]
-            [cheshire.core :as ches :refer [parse-string]]
+            [cheshire.core :refer [parse-string]]
             [clojure.walk :refer [keywordize-keys]]))
 
 (defn all-future! [colf]
@@ -34,30 +34,31 @@
         (go-wrapped-f-into-chan f out)
         (recur)))))
 
-(defn drain-system! [in at]
+(defn drain-system! [in out]
   (go-loop []
     (when-some [v (<! in)]
-      (swap! at conj v)
+      (>! out v)
       (recur))))
 
 (defn create-parking-system []
-  (let [at (atom [])
-        in (chan)
+  (let [in (chan)
         out-i (chan)
+        out-l (chan)
         is (ingest-system in out-i)
-        ds (drain-system! out-i at)]
-    [in out-i is ds at]))
+        ds (drain-system! out-i out-l)]
+    [in out-i out-l is ds]))
 
 (defn run-parking-system! [system colf]
-  (let [[in out-i is ds at] system]
+  (let [[in out-i out-l is ds] system]
     (mapv #(>!! in %) colf)
 
-    (while (not= (count colf) (count @at))
-      nil)
-
-    (mapv #(close! %) [in out-i is ds])
-
-    @at))
+    (let [r (loop [c []]
+              (let [v (<!! out-l)]
+                (if (or (= (count c) (dec (count colf))) (nil? v))
+                  c
+                  (recur (conj c v)))))]
+      (mapv #(close! %) [in out-i out-l is ds])
+      r)))
 
 (defn parking-brute [colf]
   (let [out (chan (chan-size colf))
