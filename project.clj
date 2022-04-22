@@ -1,6 +1,6 @@
-(defproject beam-x "0.0.0"
+(defproject beam-x "0.1.0"
   :description "FIXME: write description"
-  :url "https://github.com//"
+  :url "https://github.com/cinguilherme/beam"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/core.async "1.5.648"]
