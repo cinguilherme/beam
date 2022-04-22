@@ -24,14 +24,17 @@
       c
       max-size)))
 
+(defn go-wrapped-f-into-chan [f out]
+  (go (>! out (f))))
+
 (defn ingest-system [in out]
   (go-loop []
     (when-some [f (<! in)]
       (do
-        (>! out (f))
+        (go-wrapped-f-into-chan f out)
         (recur)))))
 
-(defn drain-system! [in out at]
+(defn drain-system! [in at]
   (go-loop []
     (when-some [v (<! in)]
       (swap! at conj v)
@@ -39,24 +42,20 @@
 
 (defn create-parking-system []
   (let [at (atom [])
-        in (chan 20)
-        out-i (chan 20)
-        out-d (chan 20)
+        in (chan)
+        out-i (chan)
         is (ingest-system in out-i)
-        ds (drain-system! out-i out-d at)]
-    (println "parking system created")
-    [in out-i out-d is ds at]))
+        ds (drain-system! out-i at)]
+    [in out-i is ds at]))
 
-(defn run-parking-systems [system colf]
-  (let [[in out-i out-d is ds at] system]
-    (println "mapping functions into in chan")
+(defn run-parking-system! [system colf]
+  (let [[in out-i is ds at] system]
     (mapv #(>!! in %) colf)
-    (println "completed!")
 
     (while (not= (count colf) (count @at))
       nil)
 
-    (mapv #(close! %) [in out-i out-d is ds])
+    (mapv #(close! %) [in out-i is ds])
 
     @at))
 
@@ -78,12 +77,13 @@
 (comment
 
   (def many-cat-facts (mapv (fn [_] get-cat-fact!) (range 10)))
+  (println many-cat-facts)
 
   (time (parking-brute many-cat-facts))
 
   (def parking-system (create-parking-system))
 
-  (time (run-parking-systems parking-system many-cat-facts))
+  (time (run-parking-system! parking-system many-cat-facts))
 
 
   (defmacro tap [v]
