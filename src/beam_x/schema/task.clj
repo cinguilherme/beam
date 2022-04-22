@@ -1,6 +1,5 @@
 (ns beam-x.schema.task
-  (:require [schema.core :as s]
-            [clojure.core.async :as a :refer [chan >! <!! <! go go-loop]]
+  (:require [clojure.core.async :as a :refer [chan >! <!! <! go go-loop close!]]
             [cheshire.core :as ches :refer [parse-string]]
             [clojure.walk :refer [keywordize-keys]]))
 
@@ -28,18 +27,17 @@
 (defn get-cat-fact-parked [colf]
   (let [out (chan (chan-size colf))
 
-        inx (go-loop [cx colf]
+        _ (go-loop [cx colf]
               (if (empty? cx)
-                (do (println "no more to input"))
+                (a/close! out)
                 (do (>! out (get-cat-fact!))
-                    (recur (rest cx)))))
+                    (recur (rest cx)))))]
 
-        outx (go-loop [col []]
-               (if-some [v (<! out)]
-                 (recur (conj col v))))]
-
-    (do (println outx)
-        outx)))
+    (loop [col []]
+      (let [v (<!! out)]
+        (if (nil? v)
+          col
+          (recur (conj col v)))))))
 
 (comment
 
