@@ -18,19 +18,19 @@
   (-> (slurp "https://catfact.ninja/fact") parse-string keywordize-keys))
 
 (defn chan-size [col]
-  (let [max-size 50
+  (let [max-size 5
         c (count col)]
     (if (< c max-size)
       c
       max-size)))
 
-(defn get-cat-fact-parked [colf]
+(defn parking-brute [colf]
   (let [out (chan (chan-size colf))
 
         _ (go-loop [cx colf]
               (if (empty? cx)
                 (a/close! out)
-                (do (>! out (get-cat-fact!))
+                (do (>! out ((first cx)))
                     (recur (rest cx)))))]
 
     (loop [col []]
@@ -41,9 +41,9 @@
 
 (comment
 
-  (def many-cat-facts (mapv #(get-cat-fact!) (range 20)))
+  (def many-cat-facts (mapv (fn [_] get-cat-fact!) (range 10)))
 
-  (get-cat-fact-parked many-cat-facts)
+  (time (parking-brute many-cat-facts))
 
 
   (defmacro tap [v]
@@ -55,10 +55,10 @@
     (-> (slurp "https://catfact.ninja/fact") parse-string keywordize-keys))
 
 
-  (macroexpand '(brute-threads [get-cat-fact! get-cat-fact! get-cat-fact! get-cat-fact! get-cat-fact! get-cat-fact!]))
+  (macroexpand '(brute-threads many-cat-facts))
 
   (get-cat-fact!)
 
-  (brute-threads [get-cat-fact! get-cat-fact! get-cat-fact! get-cat-fact! get-cat-fact! get-cat-fact!])
+  (time (brute-threads many-cat-facts))
 
   )
