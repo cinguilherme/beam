@@ -1,10 +1,11 @@
-(defproject org.clojars.cinguilherme/beam-x "0.2.0"
+(defproject org.clojars.cinguilherme/beam-x "0.2.1"
   :description "FIXME: write description"
   :url "https://github.com/cinguilherme/beam"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/core.async "1.5.648"]
-                 [prismatic/schema "1.2.0"]]
+                 [prismatic/schema "1.2.0"]
+                 [cheshire "5.10.2"]]
   :plugins [[lein-cloverage "1.0.13"]
             [lein-shell "0.5.0"]
             [lein-ancient "0.6.15"]

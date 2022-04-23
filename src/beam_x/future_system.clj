@@ -1,6 +1,5 @@
 (ns beam-x.future-system
-  (:require [beam-x.schema.types :as t]
-            [beam-x.utils :as u]))
+  (:require [beam-x.schema.types :as t]))
 
 (defn- all-future! [colf]
   (mapv #(future (%)) colf))
