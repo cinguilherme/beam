@@ -3,10 +3,11 @@
 [![codecov](https://codecov.io/gh///branch/master/graph/badge.svg)](https://codecov.io/gh//)
 [![Clojars Project](https://img.shields.io/clojars/v/beam-x.svg)](https://clojars.org/beam-x)
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure library designed to expose a super simple way of 
+executing collections of functions in a concurrent or parallel way.
 
 ```clj
-[beam-x "0.0.0"]
+[beam-x "0.1.0"]
 ```
 
 ## Usage

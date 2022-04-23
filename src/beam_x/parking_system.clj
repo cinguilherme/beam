@@ -1,6 +1,5 @@
 (ns beam-x.parking-system
-  (:require [clojure.core.async :as a :refer [chan go go-loop >! <! >!! <!! close!]]
-            [beam-x.utils :as u]))
+  (:require [clojure.core.async :as a :refer [chan go go-loop >! <! >!! <!! close!]]))
 
 (defn- go-wrapped-f-into-chan [f out]
   (go (>! out (f))))
@@ -27,13 +26,14 @@
     [in out-i out-l is ds]))
 
 (defn- run-parking-system! [system colf]
-  (let [[in out-i out-l is ds] system]
+  (let [[in out-i out-l is ds] system
+        size (count colf)]
     (mapv #(>!! in %) colf)
 
     (let [r (loop [c []]
               (let [v (<!! out-l)]
-                (if (or (= (count c) (dec (count colf))) (nil? v))
-                  c
+                (if (or (nil? v) (= (count c) (dec size)) )
+                  (conj c v)
                   (recur (conj c v)))))]
       (mapv #(close! %) [in out-i out-l is ds])
       r)))
@@ -42,9 +42,3 @@
   (let [system (create-parking-system)]
     (run-parking-system! system colf)))
 
-(comment
-
-  (def cats (mapv (fn [_] u/get-cat-fact!) (range 10)))
-
-  (concur-parking! cats)
-  )
