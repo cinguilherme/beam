@@ -1,4 +1,4 @@
-(defproject beam-x "0.1.0"
+(defproject org.clojars.cinguilherme/beam-x "0.1.0"
   :description "FIXME: write description"
   :url "https://github.com/cinguilherme/beam"
   :license {:name "Eclipse Public License"
