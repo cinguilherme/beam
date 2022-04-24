@@ -14,7 +14,13 @@
   (testing "vast functions"
     (let [fnz (map (fn [v] #(identity v)) (range 1000))]
       (is (= (range 1000)
-             (sort (concur-parking! fnz)))))))
+             (sort (concur-parking! fnz))))))
+
+  (testing "vast functions"
+    (let [fnz (map (fn [v] #(identity v)) (range 10000))]
+      (is (= (range 10000)
+             (sort (concur-parking! fnz))))))
+  )
 
 (comment
 

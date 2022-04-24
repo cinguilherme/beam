@@ -25,7 +25,8 @@
         ds (drain-system! out-i out-l)]
     [in out-i out-l is ds]))
 
-(defn- run-parking-system! [system colf]
+(defn- run-parking-system!
+  [system colf]
   (let [[in out-i out-l is ds] system
         size (count colf)]
     (mapv #(>!! in %) colf)
@@ -38,7 +39,15 @@
       (mapv #(close! %) [in out-i out-l is ds])
       r)))
 
-(defn concur-parking! [colf]
+(defn- concur-parking-part!
+  [colf-p]
   (let [system (create-parking-system)]
-    (run-parking-system! system colf)))
+    (run-parking-system! system colf-p)))
 
+(defn concur-parking!
+  [colf]
+  (let [parts (partition 1000 1000 nil colf)]
+    (loop [p parts res []]
+      (if (empty? p)
+        res
+        (recur (rest p) (concat res (concur-parking-part! (first p))))))))
