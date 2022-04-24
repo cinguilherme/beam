@@ -7,7 +7,7 @@ A Clojure library designed to expose a super simple way of
 executing collections of functions in a concurrent or parallel way.
 
 ```clj
-[beam-x "0.2.1"]
+[beam-x "0.2.4"]
 ```
 
 ## Usage
