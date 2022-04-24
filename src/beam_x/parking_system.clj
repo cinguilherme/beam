@@ -1,5 +1,7 @@
 (ns beam-x.parking-system
-  (:require [clojure.core.async :as a :refer [chan go go-loop >! <! >!! <!! close!]]))
+  (:require [clojure.core.async :as a :refer [chan go go-loop >! <! >!! <!! close!]]
+            [schema.core :as s]
+            [beam-x.schema.types :as t]))
 
 (defn- go-wrapped-f-into-chan [f out]
   (go (>! out (f))))
@@ -26,27 +28,33 @@
     [in out-i out-l is ds]))
 
 (defn- run-parking-system!
-  [system colf]
+  [system col]
   (let [[in out-i out-l is ds] system
-        size (count colf)]
-    (mapv #(>!! in %) colf)
+        size (count col)]
+    (mapv #(>!! in %) col)
 
     (let [r (loop [c []]
               (let [v (<!! out-l)]
-                (if (or (nil? v) (= (count c) (dec size)) )
+                (if (or (nil? v) (= (count c) (dec size)))
                   (conj c v)
                   (recur (conj c v)))))]
       (mapv #(close! %) [in out-i out-l is ds])
       r)))
 
 (defn- concur-parking-part!
-  [colf-p]
+  [col-partition]
   (let [system (create-parking-system)]
-    (run-parking-system! system colf-p)))
+    (run-parking-system! system col-partition)))
 
-(defn concur-parking!
-  [colf]
-  (let [parts (partition 1000 1000 nil colf)]
+(s/defn concur-parking! :- [s/Any]
+  "The parking system aims to be a bit more lightweight than the threads option.
+  This will use the clojure/core.async tools to resolve the results in a vector.
+  Order not Guaranteed here.
+  Allowing for possibly a lot larger collection of functions
+  to be in-taken and backpressure will be guaranteed.
+  However, bad fit for CPU intensive tasks."
+  [col :- [t/Fn]]
+  (let [parts (partition 1000 1000 nil col)]
     (loop [p parts res []]
       (if (empty? p)
         res

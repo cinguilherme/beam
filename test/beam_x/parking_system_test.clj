@@ -1,8 +1,10 @@
 (ns beam-x.parking-system-test
   (:require [clojure.test :refer :all])
   (:require [beam-x.parking-system :refer :all]
-            [beam-x.utils :as u]))
+            [beam-x.utils :as u]
+            [schema.core :as s]))
 
+(s/with-fn-validation)
 
 (deftest concur-parking!-test
 

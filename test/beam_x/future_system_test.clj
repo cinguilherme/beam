@@ -1,7 +1,10 @@
 (ns beam-x.future-system-test
   (:require [clojure.test :refer :all])
   (:require [beam-x.future-system :refer :all]
-            [beam-x.utils :as u]))
+            [beam-x.utils :as u]
+            [schema.core :as s]))
+
+(s/with-fn-validation)
 
 (deftest brute-threads!-test
   (testing "all results as collection"
