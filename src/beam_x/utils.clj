@@ -8,6 +8,11 @@
     parse-string
     keywordize-keys))
 
+(defn throw? [f]
+  (try
+    (do (f) false)
+    (catch Exception e true)))
+
 (comment
   (get-cat-fact!)
   )
